@@ -171,6 +171,8 @@ input.sz{width:56px;font:inherit;font-family:var(--num);font-size:14px;border:1p
 .mini li.bad{background:var(--bad-soft);color:var(--bad)}
 .verdict{white-space:pre-line}
 .busy{opacity:.6;pointer-events:none}
+.expok{display:flex;gap:10px;align-items:flex-start;background:var(--bad-soft);color:var(--bad);border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer}
+.expok input{width:20px;height:20px;margin-top:1px;accent-color:var(--bad)}
 #print-label{display:none}
 @media (min-width:900px){
   .wrap{max-width:1060px}
@@ -220,8 +222,12 @@ input.sz{width:56px;font:inherit;font-family:var(--num);font-size:14px;border:1p
   <section id="view-rx" hidden>
     <div class="split">
     <div class="rx">
-      <div class="field"><label for="rx-pt">病人（會印在標籤上）</label>
-        <input id="rx-pt" class="num-in" list="pt-list" autocomplete="off" placeholder="病人名字"></div>
+      <div class="grid3 two">
+        <div class="field"><label for="rx-pt">病人（會印在標籤上）</label>
+          <input id="rx-pt" class="num-in" list="pt-list" autocomplete="off" placeholder="病人名字"></div>
+        <div class="field"><label for="rx-date">配藥日期（補登可改）</label>
+          <input id="rx-date" class="num-in" type="date"></div>
+      </div>
       <div class="field">
         <label for="rx-text">處方（藥名後面接數字，用頓號、逗號、空格或換行分開）</label>
         <textarea id="rx-text" placeholder="例如：小柴胡湯2、桂枝湯2、葛根3、炙草0.5"></textarea>
@@ -245,6 +251,7 @@ input.sz{width:56px;font:inherit;font-family:var(--num);font-size:14px;border:1p
         <button id="add-btn" type="button" class="addbtn">加入</button>
         <div id="add-msg" class="hint" aria-live="polite"></div>
       </div>
+      <label id="rx-exp-box" class="expok" hidden><input type="checkbox" id="rx-exp-ok"> <span id="rx-exp-txt"></span></label>
       <button id="rx-go" class="primary" type="button">確認配藥並扣庫存</button>
       <div id="rx-confirm" class="confirm" hidden></div>
     </div>
@@ -572,7 +579,9 @@ function parseRx(txt) {
   });
   return out;
 }
-let rx = [];
+let rx = [], lastExpKey = "";
+$("#rx-date").value = new Date().toLocaleDateString("en-CA");
+$("#rx-exp-ok").addEventListener("change", () => { hideRxConfirm(); recalc(); });
 function opts() {
   const mode = $("#rx-mode").value, times = Math.max(1, +$("#rx-times").value || 1), days = Math.max(1, +$("#rx-days").value || 1);
   return { mode, times, days, mult: mode === "dose" ? times : 1 };
@@ -597,7 +606,7 @@ function buildTable() {
   recalc();
 }
 function recalc() {
-  const o = opts(); let perDay = 0, total = 0, nShort = 0, nUnknown = 0, nExp = 0;
+  const o = opts(); let perDay = 0, total = 0, nShort = 0, nUnknown = 0, nExp = 0; const expNames = [];
   rx.forEach((l, i) => {
     const tr = document.querySelector(`#rx-body tr[data-i="${i}"]`); if (!tr) return;
     const daily = r1(l.qty * o.mult), need = r1(daily * o.days); perDay += daily; total += need;
@@ -605,9 +614,9 @@ function recalc() {
     const note = tr.querySelector(".stock-note"), aft = tr.querySelector(".after"), s = byName[l.name];
     if (!s) { nUnknown++; tr.className = "unknown"; note.textContent = "找不到這味藥"; aft.textContent = "—"; return; }
     const after = r1(s.left - need), short = after < 0, exp = s.status === "已過期";
-    if (short) nShort++; if (exp) nExp++;
+    if (short) nShort++; if (exp) { nExp++; expNames.push(`${l.name}（效期 ${s.exp}）`); }
     tr.className = short || exp ? "short" : "";
-    note.textContent = exp ? `已過期（${s.exp}），不能配` : `現有 ${fmt(s.left)} g`;
+    note.textContent = exp ? `已過期（${s.exp}）· 現有 ${fmt(s.left)} g` : `現有 ${fmt(s.left)} g`;
     aft.textContent = short ? `缺 ${r1(-after)}` : after;
   });
   document.querySelectorAll("#rx-body tr.grp").forEach(g => {
@@ -617,11 +626,17 @@ function recalc() {
   $("#rx-foot").innerHTML = rx.length ? `<tr><td>合計</td><td>${r1(perDay)} /日</td><td>${r1(total)}</td><td></td><td></td></tr>` : "";
   const v = $("#rx-verdict");
   if (!rx.length) { v.className = "verdict warn"; v.textContent = "還沒有處方。"; }
-  else if (nExp) { v.className = "verdict bad"; v.textContent = `有 ${nExp} 味已過期，請換掉標紅的那幾行。`; }
+  const expKey = expNames.join("|");
+  if (expKey !== lastExpKey) { $("#rx-exp-ok").checked = false; lastExpKey = expKey; }
+  $("#rx-exp-box").hidden = !nExp;
+  $("#rx-exp-txt").textContent = nExp ? `我知道 ${expNames.join("、")} 已過期，仍要配（會自動記在配藥單備註）` : "";
+  const expOk = !nExp || $("#rx-exp-ok").checked;
+  if (nExp && !expOk) { v.className = "verdict bad"; v.textContent = `有 ${nExp} 味已過期（標紅）。要換藥，或勾選下方「仍要配」。`; }
   else if (nShort) { v.className = "verdict bad"; v.textContent = `有 ${nShort} 味不夠配 ${o.days} 天，標紅的那幾行。`; }
   else if (nUnknown) { v.className = "verdict warn"; v.textContent = `有 ${nUnknown} 味認不出來，請改成完整藥名，或到「設定」加別名。`; }
+  else if (nExp) { v.className = "verdict warn"; v.textContent = `配得出來（含過期藥 ${nExp} 味，已確認）：每天 ${r1(perDay)} g，${o.days} 天共 ${r1(total)} g。`; }
   else { v.className = "verdict ok"; v.textContent = `配得出來：每天 ${r1(perDay)} g，${o.days} 天共 ${r1(total)} g。`; }
-  $("#rx-go").disabled = !rx.length || nShort > 0 || nUnknown > 0 || nExp > 0;
+  $("#rx-go").disabled = !rx.length || nShort > 0 || nUnknown > 0 || !expOk;
   return { perDay: r1(perDay), total: r1(total), ...o };
 }
 function hideRxConfirm() { $("#rx-confirm").hidden = true; }
@@ -657,10 +672,10 @@ let pendingRx = null;
 $("#rx-go").addEventListener("click", () => {
   const pt = $("#rx-pt").value.trim(); const r = recalc();
   if (!pt) { $("#rx-verdict").className = "verdict warn"; $("#rx-verdict").textContent = "請先填病人。"; $("#rx-pt").focus(); return; }
-  pendingRx = { requestId: rid(), patient: pt, mode: r.mode, times: r.times, days: r.days, raw: $("#rx-text").value.trim(),
+  pendingRx = { requestId: rid(), date: $("#rx-date").value, allowExpired: $("#rx-exp-ok").checked, patient: pt, mode: r.mode, times: r.times, days: r.days, raw: $("#rx-text").value.trim(),
     lines: rx.map(l => ({ name: l.name, qty: l.qty })) };
   const c = $("#rx-confirm"); c.hidden = false;
-  c.innerHTML = `<div><b>確定配藥？</b> ${esc(pt)} · ${r.days} 天 · 每天 ${r.perDay} g · 共 ${r.total} g。按下後會立刻扣庫存。</div>
+  c.innerHTML = `<div><b>確定配藥？</b> ${esc($("#rx-date").value)} · ${esc(pt)} · ${r.days} 天 · 每天 ${r.perDay} g · 共 ${r.total} g。按下後會立刻扣庫存。</div>
     <div class="row"><button type="button" class="primary" id="rx-yes">確定配藥</button><button type="button" class="ghost sm" id="rx-no">取消</button></div>`;
   $("#rx-no").onclick = hideRxConfirm;
   $("#rx-yes").onclick = submitRx;
