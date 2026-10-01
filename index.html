@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>康富庫存</title>
+<meta name="theme-color" content="#133b26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="康富庫存">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px)}
+[hidden]{display:none!important}
+
+/* Layout: one narrow column, phone-first; sticky search + filters, list of jars below */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --fg:#1d2621; --muted:#66716a; --line:#dfe4df;
+  --accent:#133b26; --accent-soft:#e2eee8;
+  --ok:#2f6b57; --warn:#a86a12; --warn-soft:#f7ecd9; --bad:#b33a2e; --bad-soft:#f6e1de;
+  --display:"Noto Serif TC","Songti TC",serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --surface:#1a221e; --fg:#e4ebe6; --muted:#98a59d; --line:#2a352f;
+  --accent:#7cc4a6; --accent-soft:#1f3a2f; --ok:#7cc4a6; --warn:#e2ad5a; --warn-soft:#3a2d17; --bad:#ef8a7c; --bad-soft:#3d201c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121815; --surface:#1a221e; --fg:#e4ebe6; --muted:#98a59d; --line:#2a352f;
+  --accent:#7cc4a6; --accent-soft:#1f3a2f; --ok:#7cc4a6; --warn:#e2ad5a; --warn-soft:#3a2d17; --bad:#ef8a7c; --bad-soft:#3d201c; color-scheme:dark}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:12px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-size:26px;margin:4px 0;letter-spacing:.04em}
+.snap{font-size:12px;color:var(--muted)}
+.banner{margin-top:8px;background:var(--accent-soft);color:var(--fg);border-radius:10px;padding:8px 12px;font-size:13px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:grid;gap:8px}
+#q{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg)}
+#q:focus{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+.sum{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:13px;border-radius:999px;padding:4px 10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;font-family:inherit}
+.chip b{font-family:var(--num);font-weight:500}
+.chip.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.chip.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.chip[aria-pressed="true"]{outline:2px solid currentColor}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+li button.main{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:4px 12px;width:100%;padding:12px 14px;cursor:pointer}
+li button.main:focus-visible{outline:2px solid var(--accent);border-radius:12px}
+.name{font-weight:700;font-size:17px;min-width:0}
+.py{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.g{font-family:var(--num);font-size:20px;text-align:right;font-variant-numeric:tabular-nums}
+.g small{font-size:12px;color:var(--muted);margin-left:2px}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.pill{font-size:12px;padding:1px 8px;border-radius:999px;font-weight:500}
+.pill.ok{background:var(--accent-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.jars{display:flex;gap:4px;align-items:center;justify-content:flex-end}
+.jar{width:12px;height:18px;border:1.5px solid var(--accent);border-radius:3px 3px 4px 4px;position:relative;overflow:hidden;box-sizing:border-box}
+.jar i{position:absolute;left:0;right:0;bottom:0;background:var(--accent);opacity:.8}
+.detail{border-top:1px dashed var(--line);margin:0 14px;padding:10px 0 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;font-size:13px}
+.detail dt{color:var(--muted)} .detail dd{margin:0;font-family:var(--num);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);text-align:center;padding:24px 0}
+footer{margin-top:20px;font-size:12px;color:var(--muted);display:grid;gap:4px}
+.wrap{padding-bottom:96px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;gap:4px;padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
+nav.tabs button{font:inherit;font-size:14px;flex:1;max-width:180px;border:0;background:transparent;color:var(--muted);padding:8px 0;border-radius:10px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{color:var(--accent);background:var(--accent-soft);font-weight:700}
+.field{display:grid;gap:4px}
+.field label{font-size:13px;color:var(--muted)}
+textarea,.num-in,select{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);padding:10px 12px;box-sizing:border-box;width:100%}
+textarea{min-height:96px;resize:vertical;line-height:1.6}
+textarea:focus,.num-in:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rx{display:grid;gap:12px;padding-block:12px}
+.hint{font-size:12px;color:var(--muted)}
+table.lines{width:100%;border-collapse:collapse;font-size:14px}
+.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.lines th{font-weight:500;color:var(--muted);font-size:12px;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}
+.lines th:first-child,.lines td:first-child{text-align:left}
+.lines td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lines td:first-child{font-family:var(--body)}
+.lines tr:last-child td{border-bottom:0}
+.lines tr.short td{background:var(--bad-soft)}
+.lines tr.short td.after{color:var(--bad);font-weight:700}
+.lines tr.unknown td{background:var(--warn-soft)}
+.lines tfoot td{font-weight:700;border-top:1px solid var(--line)}
+.verdict{border-radius:12px;padding:10px 14px;font-size:14px}
+.verdict.ok{background:var(--accent-soft);color:var(--ok)}
+.verdict.bad{background:var(--bad-soft);color:var(--bad)}
+.verdict.warn{background:var(--warn-soft);color:var(--warn)}
+.primary{font:inherit;font-size:16px;font-weight:700;border:0;border-radius:12px;padding:13px;background:var(--accent);color:var(--surface);cursor:pointer;width:100%}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.primary:focus-visible,.ghost:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.ghost{font:inherit;font-size:15px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);color:var(--fg);cursor:pointer;width:100%}
+.confirm{display:grid;gap:8px;background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:12px 14px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.stepper .st{font:inherit;font-size:18px;width:32px;height:36px;border:0;background:transparent;color:var(--accent);cursor:pointer}
+.stepper .q{width:52px;height:36px;border:0;border-inline:1px solid var(--line);text-align:center;font-family:var(--num);font-size:16px;background:var(--surface);color:var(--fg);-moz-appearance:textfield;padding:0}
+.stepper .q::-webkit-outer-spin-button,.stepper .q::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper .q:focus,.stepper .st:focus-visible,.del:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.lines td:nth-child(2){padding-inline:4px}
+.del{font:inherit;font-size:18px;border:0;background:transparent;color:var(--muted);width:32px;height:36px;cursor:pointer;border-radius:8px}
+.stock-note{font-size:11px;color:var(--muted);font-family:var(--num)}
+tr.short .stock-note,tr.short td.after{color:var(--bad)}
+tr.unknown .stock-note{color:var(--warn)}
+.lines tr.grp td{background:var(--bg);font-family:var(--body);font-weight:700;font-size:13px;color:var(--accent);text-align:left;padding:6px 10px;letter-spacing:.05em}
+.grp-sub{font-weight:400;color:var(--muted);letter-spacing:0}
+.adder{display:grid;grid-template-columns:minmax(0,1fr) 88px auto;gap:8px;align-items:end;background:var(--surface);border:1px dashed var(--accent);border-radius:12px;padding:10px 12px}
+.adder .hint{grid-column:1/-1;min-height:1em}
+.addbtn{font:inherit;font-size:15px;font-weight:700;border:0;border-radius:12px;padding:0 16px;height:46px;background:var(--accent-soft);color:var(--accent);cursor:pointer}
+.addbtn:focus-visible{outline:2px solid var(--accent)}
+.openbox{grid-column:2;font:inherit;font-size:14px;font-weight:700;border:1px solid var(--accent);border-radius:10px;padding:6px 12px;background:var(--surface);color:var(--accent);cursor:pointer}
+.openbox:disabled{opacity:.4}
+.toast{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:14px}
+.undo{font:inherit;font-weight:700;border:0;background:transparent;color:var(--accent);cursor:pointer;text-decoration:underline}
+.lg-body{border-top:1px dashed var(--line);margin:0 14px;padding:10px 0 12px;display:grid;gap:8px}
+.lg-grp{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.05em}
+.lg-lines{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.lg-lines b{font-family:var(--num);font-weight:500}
+.lg-act{display:grid;gap:8px;margin-top:4px}
+li.voided .name,li.voided .g{text-decoration:line-through;color:var(--muted)}
+.void-ask{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:10px 12px;font-size:14px;display:grid;gap:8px}
+.danger{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 14px;background:var(--bad);color:var(--surface);cursor:pointer}
+.ghost.sm{width:auto;padding:10px 14px}
+.consum{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:grid;gap:6px;font-size:14px}
+.consum-h{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.05em}
+.consum-r{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.consum-r .mono{font-family:var(--num);font-variant-numeric:tabular-nums}
+.consum-r.warn{color:var(--warn)}
+li .main.static{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 14px}
+.pdfrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.filebtn{font-size:15px;font-weight:700;border-radius:12px;padding:11px 16px;background:var(--accent);color:var(--surface);cursor:pointer}
+#in-pdf:focus-visible+span,.filebtn:focus-within{outline:2px solid var(--accent)}
+.pdfrow .hint{flex:1;min-width:0}
+.grid3.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+input.sz{width:56px;font:inherit;font-family:var(--num);font-size:14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);padding:2px 4px}
+.verdict .mono{font-family:var(--num);font-size:12px;word-break:break-all}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.label{border:1.5px dashed var(--muted);border-radius:8px;padding:10px 12px;font-size:13px;display:grid;gap:4px;background:var(--surface)}
+.label h3{margin:0;font-size:15px;font-family:var(--display)}
+.label .mono{font-family:var(--num)}
+.lab-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:15px}
+.lab-grid span{color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){li{transition:border-color .15s}}
+
+.logo{border-radius:8px;vertical-align:-7px;margin-right:10px;background:#fff}
+.seg.big button{font-size:17px;padding:10px 22px}
+.login{max-width:360px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.card h2{margin:0;font-size:16px;font-family:var(--display)}
+.split{display:grid;gap:16px}
+.side{display:none}
+.mini{gap:4px}
+.mini li{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;font-size:14px;border-radius:8px}
+.mini li b{font-family:var(--num);font-weight:500}
+.mini li.bad{background:var(--bad-soft);color:var(--bad)}
+.verdict{white-space:pre-line}
+.busy{opacity:.6;pointer-events:none}
+#print-label{display:none}
+@media (min-width:900px){
+  .wrap{max-width:1060px}
+  .split{grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+  .side{display:grid;gap:8px;position:sticky;top:12px;max-height:calc(100vh - 120px);overflow:auto}
+  #list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rx{max-width:none}
+}
+@media print{
+  body *{visibility:hidden}
+  #print-label,#print-label *{visibility:visible}
+  #print-label{display:block;position:absolute;left:0;top:0;width:90mm;padding:4mm;font-family:var(--body);color:#000;background:#fff}
+  #print-label h3{margin:0 0 2mm;font-size:14pt}
+  #print-label .lab-grid{font-size:12pt}
+  #print-label .lab-grid span{color:#000}
+}
+
+.banner.info{background:var(--accent-soft)}
+.banner.bad{background:var(--bad-soft);color:var(--bad)}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><img src="logo-96.png" alt="" class="logo" width="36" height="36">康富庫存</h1>
+    <span class="snap" id="who"></span>
+  </header>
+  <div id="net" class="banner" hidden></div>
+
+  <!-- 登入 -->
+  <section id="view-login" hidden>
+    <div class="rx login">
+      <p class="hint">第一次在這台裝置使用，請選自己的名字並輸入 PIN。之後 180 天內不用再輸入。</p>
+      <div class="seg big" role="group" aria-label="使用者">
+        <button type="button" id="u-kevin" data-user="Kevin" aria-pressed="true">Kevin</button>
+        <button type="button" id="u-clair" data-user="Clair" aria-pressed="false">Clair</button>
+      </div>
+      <div class="field"><label for="pin">PIN</label>
+        <input id="pin" class="num-in" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8"></div>
+      <button id="login-go" class="primary" type="button">登入</button>
+      <div id="login-msg" class="verdict warn" hidden></div>
+    </div>
+  </section>
+
+  <!-- 配藥 -->
+  <section id="view-rx" hidden>
+    <div class="split">
+    <div class="rx">
+      <div class="field"><label for="rx-pt">病人（會印在標籤上）</label>
+        <input id="rx-pt" class="num-in" list="pt-list" autocomplete="off" placeholder="病人名字"></div>
+      <div class="field">
+        <label for="rx-text">處方（藥名後面接數字，用頓號、逗號、空格或換行分開）</label>
+        <textarea id="rx-text" placeholder="例如：小柴胡湯2、桂枝湯2、葛根3、炙草0.5"></textarea>
+      </div>
+      <div class="grid3">
+        <div class="field"><label for="rx-mode">數字代表</label>
+          <select id="rx-mode"><option value="day">每日量</option><option value="dose">每次量</option></select></div>
+        <div class="field"><label for="rx-times">一天幾次</label><input id="rx-times" class="num-in" type="number" inputmode="numeric" min="1" max="6" value="3"></div>
+        <div class="field"><label for="rx-days">天數</label><input id="rx-days" class="num-in" type="number" inputmode="numeric" min="1" max="90" value="7"></div>
+      </div>
+      <div id="rx-verdict" class="verdict"></div>
+      <div class="tablebox"><table class="lines">
+        <thead><tr><th>藥名</th><th id="rx-qty-h">每日 g</th><th>要配</th><th>配完剩</th><th><span class="sr">刪除</span></th></tr></thead>
+        <tbody id="rx-body"></tbody><tfoot id="rx-foot"></tfoot>
+      </table></div>
+      <div class="adder">
+        <div class="field grow"><label for="add-name">加一味（中文、簡稱或拼音）</label>
+          <input id="add-name" class="num-in" list="herb-list" autocomplete="off" placeholder="例如 黃耆"></div>
+        <div class="field qty"><label for="add-qty" id="add-qty-l">每日 g</label>
+          <input id="add-qty" class="num-in" type="number" inputmode="decimal" step="0.5" min="0" placeholder="1.5"></div>
+        <button id="add-btn" type="button" class="addbtn">加入</button>
+        <div id="add-msg" class="hint" aria-live="polite"></div>
+      </div>
+      <button id="rx-go" class="primary" type="button">確認配藥並扣庫存</button>
+      <div id="rx-confirm" class="confirm" hidden></div>
+    </div>
+    <aside class="side" aria-label="庫存速查">
+      <div class="field"><label for="side-q">庫存速查</label><input id="side-q" class="num-in" type="search" placeholder="藥名或拼音" autocomplete="off"></div>
+      <ul id="side-list" class="mini"></ul>
+    </aside>
+    </div>
+  </section>
+
+  <!-- 進貨 -->
+  <section id="view-in" hidden>
+    <div class="rx">
+      <div class="grid3 two">
+        <div class="field"><label for="in-no">發票號</label><input id="in-no" class="num-in" autocomplete="off" placeholder="I-13281"></div>
+        <div class="field"><label for="in-date">進貨日期</label><input id="in-date" class="num-in" type="date"></div>
+      </div>
+      <div class="pdfrow">
+        <label class="filebtn" for="in-pdf">選擇 PDF 發票</label>
+        <input id="in-pdf" class="sr" type="file" accept="application/pdf,.pdf">
+        <span id="in-pdf-msg" class="hint" aria-live="polite">或把發票文字貼到下面。PDF 只在這台裝置上讀取。</span>
+      </div>
+      <div class="field">
+        <label for="in-text">發票品項（一行一味）</label>
+        <textarea id="in-text" placeholder="Ge Gen 葛根 (2029-05-20 SunTen 順天) $16.17 1 $16.17 GST $0.81"></textarea>
+      </div>
+      <div id="in-bad" class="verdict warn" hidden></div>
+      <div class="tablebox"><table class="lines">
+        <thead><tr><th>品項</th><th>效期</th><th>罐</th><th>入庫後</th></tr></thead>
+        <tbody id="in-body"></tbody><tfoot id="in-foot"></tfoot>
+      </table></div>
+      <div id="in-other" class="consum" hidden></div>
+      <div class="field"><label for="in-total">發票總額（選填，用來核對）</label>
+        <input id="in-total" class="num-in" type="number" inputmode="decimal" step="0.01"></div>
+      <div id="in-verdict" class="verdict"></div>
+      <button id="in-go" class="primary" type="button">確認入庫</button>
+      <div id="in-confirm" class="confirm" hidden></div>
+    </div>
+  </section>
+
+  <!-- 紀錄 -->
+  <section id="view-log" hidden>
+    <div class="rx">
+      <div class="field"><label for="log-q">病人</label>
+        <input id="log-q" class="num-in" list="pt-list" autocomplete="off" placeholder="輸入名字，空白則列出最近 50 張"></div>
+      <div id="log-msg" class="hint" aria-live="polite"></div>
+      <ul id="log-list"></ul>
+    </div>
+  </section>
+
+  <!-- 設定 -->
+  <section id="view-set" hidden>
+    <div class="rx">
+      <div class="card">
+        <h2>盤點調整</h2>
+        <p class="hint">秤完罐子，發現和系統數字不同時用。系統會記下差額與原因，從這筆開始重新計算。</p>
+        <div class="field"><label for="adj-name">品項</label><input id="adj-name" class="num-in" list="herb-list" autocomplete="off"></div>
+        <div class="grid3 two">
+          <div class="field"><label for="adj-g">實際克數</label><input id="adj-g" class="num-in" type="number" inputmode="decimal" step="0.1" min="0"></div>
+          <div class="field"><label for="adj-why">原因</label><input id="adj-why" class="num-in" value="秤重盤點" autocomplete="off"></div>
+        </div>
+        <div id="adj-now" class="hint"></div>
+        <button id="adj-go" class="ghost" type="button">記錄盤點</button>
+      </div>
+      <div class="card">
+        <h2>新增別名</h2>
+        <div class="grid3 two">
+          <div class="field"><label for="al-from">你打的</label><input id="al-from" class="num-in" autocomplete="off" placeholder="炙草"></div>
+          <div class="field"><label for="al-to">系統當作</label><input id="al-to" class="num-in" list="herb-list" autocomplete="off" placeholder="炙甘草"></div>
+        </div>
+        <button id="al-go" class="ghost" type="button">新增別名</button>
+      </div>
+      <div class="card">
+        <h2>新增品項</h2>
+        <div class="grid3 two">
+          <div class="field"><label for="ni-name">藥名</label><input id="ni-name" class="num-in" autocomplete="off"></div>
+          <div class="field"><label for="ni-py">拼音</label><input id="ni-py" class="num-in" autocomplete="off"></div>
+          <div class="field"><label for="ni-cat">類別</label><select id="ni-cat"><option>單味</option><option>方劑</option></select></div>
+          <div class="field"><label for="ni-size">每罐 g</label><input id="ni-size" class="num-in" type="number" value="100"></div>
+          <div class="field"><label for="ni-exp">效期</label><input id="ni-exp" class="num-in" type="date"></div>
+          <div class="field"><label for="ni-g">目前克數</label><input id="ni-g" class="num-in" type="number" value="0" step="0.1"></div>
+        </div>
+        <button id="ni-go" class="ghost" type="button">新增品項</button>
+      </div>
+      <div class="card">
+        <h2>這台裝置</h2>
+        <p class="hint" id="me-line"></p>
+        <button id="logout" class="ghost" type="button">登出（換人使用）</button>
+      </div>
+      <div id="set-msg" class="verdict" hidden></div>
+    </div>
+  </section>
+
+  <!-- 庫存 -->
+  <section id="view-stock" hidden>
+  <div class="bar">
+    <input id="q" type="search" placeholder="搜尋藥名或拼音，例如 葛根、gegen" autocomplete="off">
+    <div class="row">
+      <div class="seg" role="group" aria-label="類別">
+        <button type="button" data-c="all" aria-pressed="true">全部</button>
+        <button type="button" data-c="單味" aria-pressed="false">單味</button>
+        <button type="button" data-c="方劑" aria-pressed="false">方劑</button>
+        <button type="button" data-c="耗材" aria-pressed="false">耗材</button>
+      </div>
+      <div class="seg" role="group" aria-label="排序">
+        <button type="button" data-s="name" aria-pressed="true">藥名</button>
+        <button type="button" data-s="low" aria-pressed="false">剩最少</button>
+        <button type="button" data-s="exp" aria-pressed="false">快過期</button>
+      </div>
+      <button type="button" id="reload" class="chip">重新整理</button>
+    </div>
+    <div class="sum" id="sum"></div>
+  </div>
+  <ul id="list"></ul>
+  <footer>
+    <div>狀態：已過期（配藥會擋下）／★ 訂（可用天數 ≤ 到貨＋安全天數）／偏低（剩不到一罐的 10%）。</div>
+    <div id="asof"></div>
+  </footer>
+  </section>
+</div>
+
+<div id="print-label" aria-hidden="true"></div>
+<datalist id="herb-list"></datalist>
+<datalist id="pt-list"></datalist>
+
+<nav class="tabs" role="tablist" aria-label="頁面" hidden>
+  <button type="button" role="tab" data-tab="stock" aria-selected="true">庫存</button>
+  <button type="button" role="tab" data-tab="rx" aria-selected="false">配藥</button>
+  <button type="button" role="tab" data-tab="in" aria-selected="false">進貨</button>
+  <button type="button" role="tab" data-tab="log" aria-selected="false">紀錄</button>
+  <button type="button" role="tab" data-tab="set" aria-selected="false">設定</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+/* 康富庫存 — 前端。資料全在 Google 試算表，這裡只負責畫面與呼叫後端。 */
+const API = "https://script.google.com/macros/s/AKfycbzjB4tLnGscDy2Xj9JKfeL9UobeIQKXPcB_IyxJxwxqf0dU4GM-Zsxsa4WkDBHeNDAu/exec";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const r1 = n => Math.round(n * 10) / 10;
+const fmt = n => String(r1(n));
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+let S = { token: store.get("kf-token"), user: store.get("kf-user"), data: null };
+
+async function api(action, body = {}) {
+  const res = await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action, token: S.token, ...body }) });
+  const j = await res.json();
+  if (!j.ok) {
+    if (/登入/.test(j.error || "")) { logout(true); }
+    throw new Error(j.error || "未知錯誤");
+  }
+  return j;
+}
+function net(msg, kind = "warn") { const b = $("#net"); b.hidden = !msg; b.className = "banner " + kind; b.textContent = msg || ""; }
+
+/* ---------- 登入 ---------- */
+let loginUser = "Kevin";
+document.querySelectorAll("[data-user]").forEach(b => b.addEventListener("click", () => {
+  loginUser = b.dataset.user;
+  document.querySelectorAll("[data-user]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("#pin").focus();
+}));
+async function doLogin() {
+  const pin = $("#pin").value.trim(), m = $("#login-msg");
+  if (!pin) { m.hidden = false; m.textContent = "請輸入 PIN。"; return; }
+  $("#login-go").disabled = true; m.hidden = true;
+  try {
+    const j = await api("login", { user: loginUser, pin });
+    S.token = j.token; S.user = j.user; store.set("kf-token", j.token); store.set("kf-user", j.user);
+    $("#pin").value = ""; await boot();
+  } catch (e) { m.hidden = false; m.textContent = e.message; }
+  finally { $("#login-go").disabled = false; }
+}
+$("#login-go").addEventListener("click", doLogin);
+$("#pin").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+function logout(expired) {
+  S.token = null; S.user = null; store.del("kf-token"); store.del("kf-user");
+  showLogin(expired ? "登入已失效，請重新輸入 PIN。" : "");
+}
+$("#logout").addEventListener("click", () => logout(false));
+function showLogin(msg) {
+  document.querySelectorAll("section").forEach(s => s.hidden = s.id !== "view-login");
+  $("nav.tabs").hidden = true; $("#who").textContent = "";
+  const m = $("#login-msg"); m.hidden = !msg; m.textContent = msg || "";
+}
+
+/* ---------- 載入資料 ---------- */
+let items = [], byName = {}, ALIAS = {}, CONS = [];
+async function boot() {
+  net("讀取中…", "info");
+  try {
+    const d = await api("bootstrap");
+    S.data = d;
+    items = d.stock.map(s => ({ ...s, key: (s.name + s.py + (s.py || "").replace(/\s/g, "")).toLowerCase() }));
+    byName = Object.fromEntries(items.map(i => [i.name, i]));
+    ALIAS = d.alias || {};
+    CONS = d.cons || [];
+    $("#herb-list").innerHTML = items.map(i => `<option value="${esc(i.name)}">${esc(i.py)} · ${esc(i.cat)} · 現有 ${fmt(i.left)} g${i.status === "已過期" ? " · 已過期" : ""}</option>`).join("");
+    $("#pt-list").innerHTML = (d.patients || []).map(p => `<option value="${esc(p)}">`).join("");
+    $("#who").textContent = `${d.user} · ${d.today}`;
+    $("#me-line").textContent = `這台裝置目前以 ${d.user} 登入。`;
+    $("#asof").textContent = `資料時間：${new Date().toLocaleString("zh-TW", { hour12: false })}`;
+    $("nav.tabs").hidden = false;
+    net("");
+    renderStock(); renderSide(); buildTable(); if (inv.length) buildInv();
+    showTab(store.get("kf-tab") || "stock");
+  } catch (e) {
+    if (S.token) net("連不上系統：" + e.message + "（按「重新整理」再試）", "bad");
+  }
+}
+$("#reload").addEventListener("click", boot);
+
+/* ---------- 分頁 ---------- */
+function showTab(t) {
+  ["stock", "rx", "in", "log", "set"].forEach(x => $("#view-" + x).hidden = x !== t);
+  $("#view-login").hidden = true;
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  store.set("kf-tab", t);
+  if (t === "log" && !logLoaded) loadLog();
+}
+document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+/* ---------- 庫存 ---------- */
+const state = { q: "", c: "all", s: "name", only: null, open: null };
+try { const v = JSON.parse(store.get("kf-view") || "{}"); if (v.c) state.c = v.c; if (v.s) state.s = v.s; } catch (e) {}
+const statusCls = s => s === "已過期" ? "bad" : s === "★ 訂" ? "bad" : s === "偏低" ? "warn" : "ok";
+const statusTxt = s => s === "★ 訂" ? "需補貨" : s === "OK" ? "夠用" : s;
+function canText(it) { const full = Math.floor(it.left / it.size); return `${full} 罐 ${Math.round(it.left - full * it.size)} 克`; }
+function jars(it) {
+  const full = Math.floor(it.left / it.size), rest = it.left - full * it.size; let h = "";
+  for (let i = 0; i < Math.min(full, 4); i++) h += '<span class="jar" aria-hidden="true"><i style="height:100%"></i></span>';
+  if (rest > 0.05) h += `<span class="jar" aria-hidden="true"><i style="height:${Math.max(6, rest / it.size * 100)}%"></i></span>`;
+  return h;
+}
+function renderStock() {
+  document.querySelectorAll("[data-c]").forEach(b => b.setAttribute("aria-pressed", b.dataset.c === state.c));
+  document.querySelectorAll("[data-s]").forEach(b => b.setAttribute("aria-pressed", b.dataset.s === state.s));
+  if (state.c === "耗材") return renderCons();
+  const q = state.q.trim().toLowerCase().replace(/\s/g, "");
+  let rows = items.filter(it => (state.c === "all" || it.cat === state.c) && (!q || it.key.includes(q)));
+  const cnt = f => rows.filter(f).length;
+  const soon = it => it.exp && it.status !== "已過期" && (new Date(it.exp) - new Date(S.data.today)) / 864e5 <= 90;
+  $("#sum").innerHTML =
+    `<button type="button" class="chip bad" data-only="exp0" aria-pressed="${state.only === "exp0"}">已過期 <b>${cnt(i => i.status === "已過期")}</b></button>` +
+    `<button type="button" class="chip bad" data-only="order" aria-pressed="${state.only === "order"}">需補貨 <b>${cnt(i => i.status === "★ 訂")}</b></button>` +
+    `<button type="button" class="chip warn" data-only="low" aria-pressed="${state.only === "low"}">偏低 <b>${cnt(i => i.status === "偏低")}</b></button>` +
+    `<button type="button" class="chip" data-only="soon" aria-pressed="${state.only === "soon"}">90 天內到期 <b>${cnt(soon)}</b></button>`;
+  const f = { exp0: i => i.status === "已過期", order: i => i.status === "★ 訂", low: i => i.status === "偏低", soon }[state.only];
+  if (f) rows = rows.filter(f);
+  const cmp = { name: (a, b) => a.py.localeCompare(b.py), low: (a, b) => (a.days ?? 1e9) - (b.days ?? 1e9) || a.left / a.size - b.left / b.size,
+    exp: (a, b) => (a.exp || "9999").localeCompare(b.exp || "9999") }[state.s];
+  rows.sort(cmp);
+  $("#list").innerHTML = rows.length ? rows.map(it => {
+    const open = state.open === it.name;
+    return `<li><button type="button" class="main" data-name="${esc(it.name)}" aria-expanded="${open}">
+      <span class="name">${esc(it.name)}<span class="py">${esc(it.py)}</span></span>
+      <span class="g">${fmt(it.left)}<small>g</small></span>
+      <span class="meta"><span class="pill ${statusCls(it.status)}">${esc(statusTxt(it.status))}</span>${canText(it)}${it.days != null ? ` · 約 ${it.days} 天` : ""}</span>
+      <span class="jars">${jars(it)}</span></button>
+      ${open ? `<dl class="detail"><dt>類別</dt><dd>${esc(it.cat)}</dd><dt>每罐規格</dt><dd>${it.size} g</dd>
+        <dt>近 30 日出庫</dt><dd>${it.used30 ? fmt(it.used30) + " g" : "無"}</dd><dt>可用天數</dt><dd>${it.days != null ? it.days + " 天" : "—"}</dd>
+        <dt>效期</dt><dd>${esc(it.exp || "未登記")}</dd><dt>廠牌</dt><dd>${esc(it.brand || "—")}</dd>
+        ${it.note ? `<dt>備註</dt><dd>${esc(it.note)}</dd>` : ""}</dl>` : ""}</li>`;
+  }).join("") : `<div class="empty">找不到「${esc(state.q)}」。試試拼音，或清空搜尋。</div>`;
+}
+let lastOpen = null;
+function renderCons() {
+  const q = state.q.trim().toLowerCase();
+  const rows = CONS.filter(n => !q || (n.code + n.name + n.brand).toLowerCase().includes(q));
+  $("#sum").innerHTML = `<span class="chip bad">需補貨 <b>${rows.filter(n => n.status !== "OK").length}</b></span>`;
+  $("#list").innerHTML = (lastOpen ? `<div class="toast">已記錄開一盒 ${esc(lastOpen)}<button type="button" class="undo" data-undo="${esc(lastOpen)}">復原</button></div>` : "") +
+    (rows.map(n => `<li><div class="main static">
+      <span class="name">${esc(n.code)}<span class="py">${esc(n.name)}${n.brand ? " · " + esc(n.brand) : ""}</span></span>
+      <span class="g">${n.boxes}<small>盒</small></span>
+      <span class="meta"><span class="pill ${n.status === "OK" ? "ok" : "bad"}">${n.status === "OK" ? "夠用" : "需補貨"}</span>未開盒${n.per ? " · 每盒 " + n.per + " 支" : ""} · 剩 ${n.min} 盒就補</span>
+      <button type="button" class="openbox" data-open="${esc(n.code)}" ${n.boxes < 1 ? "disabled" : ""}>開一盒</button></div></li>`).join("") || `<div class="empty">找不到「${esc(state.q)}」。</div>`);
+}
+$("#q").addEventListener("input", e => { state.q = e.target.value; renderStock(); });
+document.addEventListener("click", async e => {
+  const c = e.target.closest("[data-c]"); if (c) { state.c = c.dataset.c; state.only = null; store.set("kf-view", JSON.stringify({ c: state.c, s: state.s })); renderStock(); return; }
+  const s = e.target.closest("[data-s]"); if (s) { state.s = s.dataset.s; store.set("kf-view", JSON.stringify({ c: state.c, s: state.s })); renderStock(); return; }
+  const o = e.target.closest("[data-only]"); if (o) { state.only = state.only === o.dataset.only ? null : o.dataset.only; renderStock(); return; }
+  const m = e.target.closest("#list button.main"); if (m) { state.open = state.open === m.dataset.name ? null : m.dataset.name; renderStock(); return; }
+  const ob = e.target.closest("[data-open]");
+  if (ob) { ob.disabled = true; try { const j = await api("openBox", { code: ob.dataset.open, boxes: 1, requestId: rid() });
+      const n = CONS.find(x => x.code === j.code); if (n) { n.boxes = j.boxes; n.status = j.boxes <= n.min ? "★ 補" : "OK"; } lastOpen = j.code; renderCons();
+    } catch (err) { net(err.message, "bad"); ob.disabled = false; } return; }
+  const ub = e.target.closest("[data-undo]");
+  if (ub) { try { const j = await api("openBox", { code: ub.dataset.undo, boxes: -1, requestId: rid() });
+      const n = CONS.find(x => x.code === j.code); if (n) { n.boxes = j.boxes; n.status = j.boxes <= n.min ? "★ 補" : "OK"; } lastOpen = null; renderCons();
+    } catch (err) { net(err.message, "bad"); } }
+});
+
+/* ---------- 庫存速查（大螢幕配藥頁右側） ---------- */
+function renderSide() {
+  const q = ($("#side-q").value || "").trim().toLowerCase().replace(/\s/g, "");
+  const rows = items.filter(i => !q || i.key.includes(q)).slice(0, 60);
+  $("#side-list").innerHTML = rows.map(i => `<li class="${i.status === "已過期" ? "bad" : ""}"><span>${esc(i.name)}</span><b>${fmt(i.left)} g</b></li>`).join("");
+}
+$("#side-q").addEventListener("input", renderSide);
+
+/* ---------- 配藥 ---------- */
+function resolveName(raw) {
+  const t = raw.trim(); if (byName[t]) return t;
+  if (ALIAS[t]) return ALIAS[t];
+  const low = t.toLowerCase().replace(/\s/g, "");
+  const hit = items.find(i => (i.py || "").toLowerCase().replace(/\s/g, "") === low);
+  return hit ? hit.name : t;
+}
+function parseRx(txt) {
+  const out = [];
+  txt.split(/[、，,；;\n\s]+/).forEach(tok => {
+    const m = tok.trim().match(/^(.+?)\s*([0-9]+(?:\.[0-9]+)?)\s*(g|克)?$/i);
+    if (!m) return;
+    const raw = m[1], name = resolveName(raw);
+    out.push({ raw, name, qty: parseFloat(m[2]) });
+  });
+  return out;
+}
+let rx = [];
+function opts() {
+  const mode = $("#rx-mode").value, times = Math.max(1, +$("#rx-times").value || 1), days = Math.max(1, +$("#rx-days").value || 1);
+  return { mode, times, days, mult: mode === "dose" ? times : 1 };
+}
+function writeText() { $("#rx-text").value = rx.map(l => `${l.raw}${fmt(l.qty)}`).join("、"); }
+function buildTable() {
+  const o = opts();
+  $("#rx-qty-h").textContent = $("#add-qty-l").textContent = o.mode === "dose" ? "每次 g" : "每日 g";
+  const it = l => byName[l.name];
+  const groups = [["方劑", i => it(rx[i]) && it(rx[i]).cat === "方劑"], ["單味", i => it(rx[i]) && it(rx[i]).cat === "單味"], ["認不出的藥名", i => !it(rx[i])]];
+  let html = "";
+  groups.forEach(([title, test]) => {
+    const idx = rx.map((_, i) => i).filter(test); if (!idx.length) return;
+    html += `<tr class="grp" data-grp="${title}"><td colspan="5">${title}<span class="grp-sub"></span></td></tr>` + idx.map(i => {
+      const l = rx[i];
+      return `<tr data-i="${i}"><td>${esc(it(l) ? l.name : l.raw)}${it(l) && l.raw !== l.name ? `<span class="py">（${esc(l.raw)}）</span>` : ""}<div class="stock-note"></div></td>
+      <td><span class="stepper"><button type="button" class="st" data-step="-0.5" aria-label="${esc(l.raw)} 減 0.5 克">−</button><input id="rx-q-${i}" class="q" type="number" inputmode="decimal" step="0.5" min="0" value="${fmt(l.qty)}" aria-label="${esc(l.raw)} 克數"><button type="button" class="st" data-step="0.5" aria-label="${esc(l.raw)} 加 0.5 克">+</button></span></td>
+      <td class="need"></td><td class="after"></td><td><button type="button" class="del" aria-label="刪除 ${esc(l.raw)}">×</button></td></tr>`;
+    }).join("");
+  });
+  $("#rx-body").innerHTML = html || `<tr><td colspan="5" class="hint">貼上處方，或用下方「加一味」逐味加入。</td></tr>`;
+  recalc();
+}
+function recalc() {
+  const o = opts(); let perDay = 0, total = 0, nShort = 0, nUnknown = 0, nExp = 0;
+  rx.forEach((l, i) => {
+    const tr = document.querySelector(`#rx-body tr[data-i="${i}"]`); if (!tr) return;
+    const daily = r1(l.qty * o.mult), need = r1(daily * o.days); perDay += daily; total += need;
+    tr.querySelector(".need").textContent = need;
+    const note = tr.querySelector(".stock-note"), aft = tr.querySelector(".after"), s = byName[l.name];
+    if (!s) { nUnknown++; tr.className = "unknown"; note.textContent = "找不到這味藥"; aft.textContent = "—"; return; }
+    const after = r1(s.left - need), short = after < 0, exp = s.status === "已過期";
+    if (short) nShort++; if (exp) nExp++;
+    tr.className = short || exp ? "short" : "";
+    note.textContent = exp ? `已過期（${s.exp}），不能配` : `現有 ${fmt(s.left)} g`;
+    aft.textContent = short ? `缺 ${r1(-after)}` : after;
+  });
+  document.querySelectorAll("#rx-body tr.grp").forEach(g => {
+    const t = g.dataset.grp, ls = rx.filter(l => t === "認不出的藥名" ? !byName[l.name] : byName[l.name] && byName[l.name].cat === t);
+    g.querySelector(".grp-sub").textContent = ` · ${ls.length} 味 · 每日 ${r1(ls.reduce((a, l) => a + l.qty * o.mult, 0))} g`;
+  });
+  $("#rx-foot").innerHTML = rx.length ? `<tr><td>合計</td><td>${r1(perDay)} /日</td><td>${r1(total)}</td><td></td><td></td></tr>` : "";
+  const v = $("#rx-verdict");
+  if (!rx.length) { v.className = "verdict warn"; v.textContent = "還沒有處方。"; }
+  else if (nExp) { v.className = "verdict bad"; v.textContent = `有 ${nExp} 味已過期，請換掉標紅的那幾行。`; }
+  else if (nShort) { v.className = "verdict bad"; v.textContent = `有 ${nShort} 味不夠配 ${o.days} 天，標紅的那幾行。`; }
+  else if (nUnknown) { v.className = "verdict warn"; v.textContent = `有 ${nUnknown} 味認不出來，請改成完整藥名，或到「設定」加別名。`; }
+  else { v.className = "verdict ok"; v.textContent = `配得出來：每天 ${r1(perDay)} g，${o.days} 天共 ${r1(total)} g。`; }
+  $("#rx-go").disabled = !rx.length || nShort > 0 || nUnknown > 0 || nExp > 0;
+  return { perDay: r1(perDay), total: r1(total), ...o };
+}
+function hideRxConfirm() { $("#rx-confirm").hidden = true; }
+$("#rx-text").addEventListener("input", () => { hideRxConfirm(); rx = parseRx($("#rx-text").value); buildTable(); });
+["#rx-times", "#rx-days"].forEach(s => $(s).addEventListener("input", () => { hideRxConfirm(); recalc(); }));
+$("#rx-mode").addEventListener("input", () => { hideRxConfirm(); buildTable(); });
+$("#rx-body").addEventListener("input", e => {
+  const inp = e.target.closest("input.q"); if (!inp) return;
+  const i = +inp.closest("tr").dataset.i, v = parseFloat(inp.value); if (isNaN(v) || v < 0) return;
+  rx[i].qty = v; hideRxConfirm(); writeText(); recalc();
+});
+$("#rx-body").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-i]"); if (!tr) return; const i = +tr.dataset.i;
+  const st = e.target.closest("button.st");
+  if (st) { rx[i].qty = Math.max(0, r1(rx[i].qty + parseFloat(st.dataset.step))); tr.querySelector("input.q").value = rx[i].qty; hideRxConfirm(); writeText(); recalc(); return; }
+  if (e.target.closest("button.del")) { rx.splice(i, 1); hideRxConfirm(); writeText(); buildTable(); }
+});
+function addHerb() {
+  const rawIn = $("#add-name").value.trim(), q = parseFloat($("#add-qty").value), msg = $("#add-msg");
+  if (!rawIn) { msg.textContent = "先輸入藥名。"; return; }
+  if (isNaN(q) || q <= 0) { msg.textContent = "克數要大於 0。"; return; }
+  const name = resolveName(rawIn);
+  const dup = rx.findIndex(l => l.name === name);
+  if (dup >= 0) { msg.textContent = `${name} 已經在處方裡了，直接在上面調克數。`; const el = $("#rx-q-" + dup); if (el) el.focus(); return; }
+  rx.push({ raw: name, name, qty: q }); hideRxConfirm(); writeText(); buildTable();
+  msg.textContent = byName[name] ? `已加入 ${name} ${q} g。` : `已加入「${name}」，但庫存裡找不到這味藥，會標黃。`;
+  $("#add-name").value = ""; $("#add-qty").value = ""; $("#add-name").focus();
+}
+$("#add-btn").addEventListener("click", addHerb);
+["#add-name", "#add-qty"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addHerb(); } }));
+
+let pendingRx = null;
+$("#rx-go").addEventListener("click", () => {
+  const pt = $("#rx-pt").value.trim(); const r = recalc();
+  if (!pt) { $("#rx-verdict").className = "verdict warn"; $("#rx-verdict").textContent = "請先填病人。"; $("#rx-pt").focus(); return; }
+  pendingRx = { requestId: rid(), patient: pt, mode: r.mode, times: r.times, days: r.days, raw: $("#rx-text").value.trim(),
+    lines: rx.map(l => ({ name: l.name, qty: l.qty })) };
+  const c = $("#rx-confirm"); c.hidden = false;
+  c.innerHTML = `<div><b>確定配藥？</b> ${esc(pt)} · ${r.days} 天 · 每天 ${r.perDay} g · 共 ${r.total} g。按下後會立刻扣庫存。</div>
+    <div class="row"><button type="button" class="primary" id="rx-yes">確定配藥</button><button type="button" class="ghost sm" id="rx-no">取消</button></div>`;
+  $("#rx-no").onclick = hideRxConfirm;
+  $("#rx-yes").onclick = submitRx;
+});
+async function submitRx() {
+  const c = $("#rx-confirm"); c.classList.add("busy");
+  try {
+    const j = await api("dispense", pendingRx);
+    const perDose = r1(j.perDay / (j.times || +$("#rx-times").value || 1));
+    const times = j.times || +$("#rx-times").value || 1;
+    const label = `<h3>康富中醫 · ${esc(j.patient)}</h3><div class="lab-grid">
+      <span>日期</span><b class="mono">${j.date}</b><span>每次</span><b class="mono">${perDose} g</b>
+      <span>每天</span><b class="mono">${times} 次</b><span>共</span><b class="mono">${j.days} 天</b></div>`;
+    $("#print-label").innerHTML = label;
+    c.innerHTML = `<div class="verdict ok">已配藥並扣庫存：${esc(j.id)}</div><div class="label">${label}</div>
+      <div class="row"><button type="button" class="primary" id="rx-print">列印標籤</button><button type="button" class="ghost sm" id="rx-new">配下一張</button></div>`;
+    $("#rx-print").onclick = () => window.print();
+    $("#rx-new").onclick = () => { rx = []; $("#rx-text").value = ""; $("#rx-pt").value = ""; hideRxConfirm(); buildTable(); };
+    logLoaded = false; await boot(); showTab("rx");
+  } catch (e) {
+    c.innerHTML = `<div class="verdict bad">${esc(e.message)}</div><button type="button" class="ghost" id="rx-back">回到處方</button>`;
+    $("#rx-back").onclick = hideRxConfirm;
+  } finally { c.classList.remove("busy"); }
+}
+
+/* ---------- 進貨 ---------- */
+const INV_RE = /^\s*([A-Za-z][A-Za-z '\-]*?)\s+([㐀-鿿]+)\s*[\(（]\s*(\d{4}-\d{2}-\d{2})\s*([^)）]*)[\)）]\s*\$?\s*([\d,]+(?:\.\d+)?)\s+(\d+)\s+\$?\s*([\d,]+(?:\.\d+)?)(?:\s+GST\s*\$?\s*([\d,]+(?:\.\d+)?))?/i;
+const cjkJoin = s => s.replace(/([㐀-鿿])\s+(?=[㐀-鿿）)])/g, "$1");
+const SUMMARY_RE = /^(subtotal|shipping|gst|pst|total|tax|items\b)/i;
+const OTHER_RE = /^(.+?)\s+\$\s*([\d,]+(?:\.\d+)?)\s+(\d+)\s+\$\s*([\d,]+(?:\.\d+)?)\s*$/;
+const num = s => s ? parseFloat(String(s).replace(/,/g, "")) : 0;
+let inv = [], invBad = [], invOther = [];
+$("#in-date").value = new Date().toLocaleDateString("en-CA");
+function parseInv() {
+  inv = []; invBad = []; invOther = [];
+  $("#in-text").value.split(/\n+/).map(s => cjkJoin(s.trim())).filter(Boolean).forEach(line => {
+    const m = line.match(INV_RE);
+    if (!m) {
+      if (SUMMARY_RE.test(line) || !line.includes("$")) return;
+      const o = line.match(OTHER_RE);
+      if (o) { invOther.push({ name: o[1], price: num(o[2]), qty: +o[3] }); return; }
+      invBad.push(line); return;
+    }
+    const name = resolveName(m[2]), it = byName[name] || null;
+    const brand = m[4].trim().replace(/sunten/i, "SunTen");
+    inv.push({ py: m[1].trim(), name, exp: m[3], brand, price: num(m[5]), qty: +m[6], sub: num(m[7]), gst: num(m[8]), it, size: it ? it.size : 100,
+      cat: it ? it.cat : (/[湯散丸飲]$/.test(name) ? "方劑" : "單味") });
+  });
+  invOther.forEach(o => {
+    const m = o.name.match(/(\d)\.(\d{2})\s*[x×]\s*(\d+)\s*mm/i);
+    const code = m ? `${m[2]}${m[3]}` : null, brand = (o.name.split(/\s+/)[0] || "").toUpperCase();
+    o.n = code ? (CONS.find(n => n.code === code && String(n.brand).toUpperCase() === brand) || CONS.find(n => n.code === code) || null) : null;
+  });
+}
+function buildInv() {
+  $("#in-body").innerHTML = inv.map((l, i) => `<tr data-j="${i}">
+    <td>${esc(l.name)}${l.it ? "" : ' <span class="pill warn">新品項</span>'}<div class="stock-note">$${l.price.toFixed(2)} × ${l.qty}${l.brand ? " · " + esc(l.brand) : ""}</div>
+      ${l.it ? "" : `<div class="stock-note">每罐 <input class="sz" type="number" inputmode="numeric" min="1" step="50" value="${l.size}" aria-label="${esc(l.name)} 每罐克數"> g · ${esc(l.cat)}</div>`}</td>
+    <td>${esc(l.exp)}</td>
+    <td><span class="stepper"><button type="button" class="st" data-step="-1" aria-label="${esc(l.name)} 減一罐">−</button><input class="q" type="number" inputmode="numeric" min="0" step="1" value="${l.qty}" aria-label="${esc(l.name)} 罐數"><button type="button" class="st" data-step="1" aria-label="${esc(l.name)} 加一罐">+</button></span></td>
+    <td class="after"></td></tr>`).join("") || `<tr><td colspan="4" class="hint">選 PDF 或貼上發票文字後，這裡會列出每一味。</td></tr>`;
+  recalcInv();
+}
+function recalcInv() {
+  let sub = 0, gst = 0;
+  inv.forEach((l, i) => {
+    const tr = document.querySelector(`#in-body tr[data-j="${i}"]`); if (!tr) return;
+    const add = l.qty * l.size, before = l.it ? l.it.left : 0;
+    const lineSub = l.price * l.qty, lineGst = l.sub ? l.gst * (lineSub / l.sub) : 0; sub += lineSub; gst += lineGst;
+    tr.querySelector(".after").innerHTML = `${r1(before + add)}<div class="stock-note">${l.it ? fmt(before) + " + " + add : "新 + " + add}</div>`;
+  });
+  const total = Math.round((sub + gst) * 100) / 100;
+  $("#in-foot").innerHTML = inv.length ? `<tr><td colspan="3">小計 $${sub.toFixed(2)}　GST $${gst.toFixed(2)}</td><td>$${total.toFixed(2)}</td></tr>` : "";
+  const ob = $("#in-other"); ob.hidden = !invOther.length;
+  ob.innerHTML = invOther.length ? `<div class="consum-h">耗材（加到未開盒數）</div>` + invOther.map(o => o.n
+    ? `<div class="consum-r"><span>${esc(o.n.code)} <span class="py">${esc(o.n.name)} · ${esc(o.n.brand)}</span></span><span class="mono">+${o.qty} 盒　未開 ${o.n.boxes} → ${o.n.boxes + o.qty}</span></div>`
+    : `<div class="consum-r warn"><span>${esc(o.name)}</span><span>對不到耗材，不會入庫；請到試算表「耗材」建檔</span></div>`).join("") : "";
+  const bad = $("#in-bad"); bad.hidden = !invBad.length;
+  if (invBad.length) bad.innerHTML = `有 ${invBad.length} 行看不懂，沒有算進去：<br>` + invBad.map(s => `<span class="mono">${esc(s)}</span>`).join("<br>");
+  const v = $("#in-verdict"), want = num($("#in-total").value);
+  const otherTaxed = Math.round(invOther.reduce((a, o) => a + o.price * o.qty * 1.12, 0) * 100) / 100;
+  const nNew = inv.filter(l => !l.it).length;
+  if (!inv.length && !invOther.length) { v.className = "verdict warn"; v.textContent = "還沒有可入庫的品項。"; }
+  else if (want && invOther.length && Math.abs(want - total - otherTaxed) <= 0.02) { v.className = "verdict ok"; v.textContent = `金額對得上：藥材 $${total.toFixed(2)} ＋ 非藥材 $${otherTaxed.toFixed(2)}（含 GST＋PST）＝ $${want.toFixed(2)}。`; }
+  else if (want && Math.abs(want - total) > 0.02) { v.className = "verdict bad"; v.textContent = `金額對不上：解析出 $${total.toFixed(2)}，發票寫 $${want.toFixed(2)}，差 $${(want - total).toFixed(2)}。請檢查是否漏行。`; }
+  else { v.className = "verdict ok"; v.textContent = `${inv.length} 味，共 ${inv.reduce((a, l) => a + l.qty, 0)} 罐${want ? "，金額對得上" : ""}${nNew ? `；其中 ${nNew} 味是新品項，入庫時會一起建檔` : ""}。`; }
+  $("#in-go").disabled = !inv.length && !invOther.some(o => o.n);
+}
+function hideIn() { $("#in-confirm").hidden = true; }
+$("#in-text").addEventListener("input", () => { hideIn(); parseInv(); buildInv(); });
+$("#in-total").addEventListener("input", () => { hideIn(); recalcInv(); });
+$("#in-body").addEventListener("input", e => {
+  const tr = e.target.closest("tr[data-j]"); if (!tr) return; const l = inv[+tr.dataset.j];
+  if (e.target.classList.contains("q")) { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 0) l.qty = v; }
+  if (e.target.classList.contains("sz")) { const v = parseFloat(e.target.value); if (v > 0) l.size = v; }
+  hideIn(); recalcInv();
+});
+$("#in-body").addEventListener("click", e => {
+  const st = e.target.closest("button.st"); if (!st) return;
+  const tr = st.closest("tr[data-j]"), l = inv[+tr.dataset.j];
+  l.qty = Math.max(0, l.qty + parseInt(st.dataset.step, 10)); tr.querySelector("input.q").value = l.qty; hideIn(); recalcInv();
+});
+const MON = { Jan:1, Feb:2, Mar:3, Apr:4, May:5, Jun:6, Jul:7, Aug:8, Sep:9, Oct:10, Nov:11, Dec:12 };
+async function pdfLines(buf) {
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise, lines = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent(), rows = {};
+    tc.items.forEach(it => { if (!it.str.trim()) return; const y = Math.round(it.transform[5] / 3); (rows[y] = rows[y] || []).push(it); });
+    Object.keys(rows).sort((a, b) => b - a).forEach(y => lines.push(cjkJoin(rows[y].sort((a, b) => a.transform[4] - b.transform[4]).map(i => i.str.trim()).join(" "))));
+  }
+  return lines;
+}
+$("#in-pdf").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0], msg = $("#in-pdf-msg"); if (!f) return;
+  if (!window.pdfjsLib) { msg.textContent = "PDF 讀取工具沒有載入，請改用貼上文字。"; return; }
+  msg.textContent = `讀取 ${f.name}…`;
+  try {
+    const lines = await pdfLines(new Uint8Array(await f.arrayBuffer())), all = lines.join("\n");
+    const no = all.match(/\bI-\d{4,}\b/), d = all.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2}),\s*(\d{4})/),
+      tot = all.match(/TOTAL\s*\(CAD\)\s*\$\s*([\d,]+\.\d{2})/i);
+    if (no) $("#in-no").value = no[0];
+    if (d) $("#in-date").value = `${d[3]}-${String(MON[d[1]]).padStart(2, "0")}-${d[2].padStart(2, "0")}`;
+    if (tot) $("#in-total").value = num(tot[1]).toFixed(2);
+    $("#in-text").value = lines.filter(l => INV_RE.test(l) || (!SUMMARY_RE.test(l) && OTHER_RE.test(l))).join("\n");
+    hideIn(); parseInv(); buildInv();
+    msg.textContent = `已讀取 ${f.name}：${inv.length} 味藥材${invOther.length ? `、${invOther.length} 項非藥材` : ""}。`;
+  } catch (err) { msg.textContent = "這個 PDF 讀不出文字（可能是掃描圖片），請改用貼上文字。"; }
+  e.target.value = "";
+});
+$("#in-go").addEventListener("click", () => {
+  const no = $("#in-no").value.trim(), c = $("#in-confirm");
+  const lines = inv.filter(l => l.qty > 0);
+  const cons = invOther.filter(o => o.n).map(o => ({ code: o.n.code, boxes: o.qty }));
+  c.hidden = false;
+  c.innerHTML = `<div><b>確定入庫？</b> 發票 ${esc(no || "（無編號）")} · ${lines.length} 味藥材${cons.length ? ` · ${cons.length} 項耗材` : ""}。</div>
+    <div class="row"><button type="button" class="primary" id="in-yes">確定入庫</button><button type="button" class="ghost sm" id="in-no-btn">取消</button></div>`;
+  $("#in-no-btn").onclick = hideIn;
+  $("#in-yes").onclick = async () => {
+    c.classList.add("busy");
+    try {
+      const j = await api("receive", { requestId: rid(), invoiceNo: no, date: $("#in-date").value,
+        lines: lines.map(l => ({ name: l.name, py: l.py, brand: l.brand, size: l.size, exp: l.exp, qty: l.qty, price: l.price,
+          gst: l.sub ? Math.round(l.gst * (l.price * l.qty / l.sub) * 100) / 100 : 0, cat: l.cat })), consumables: cons });
+      c.innerHTML = `<div class="verdict ok">已入庫：發票 ${esc(j.invoiceNo)}，${j.count} 味${j.consumables ? `、耗材 ${j.consumables} 項` : ""}${j.newItems.length ? `；新建檔：${esc(j.newItems.join("、"))}` : ""}。</div>`;
+      $("#in-text").value = ""; $("#in-no").value = ""; $("#in-total").value = ""; inv = []; invOther = []; invBad = [];
+      await boot(); showTab("in"); buildInv();
+    } catch (e) { c.innerHTML = `<div class="verdict bad">${esc(e.message)}</div><button type="button" class="ghost" id="in-back">回到發票</button>`; $("#in-back").onclick = hideIn; }
+    finally { c.classList.remove("busy"); }
+  };
+});
+
+/* ---------- 紀錄 ---------- */
+let logLoaded = false, logData = [], logOpen = null, voidAsk = null, logTimer = null;
+async function loadLog() {
+  const q = $("#log-q").value.trim(); $("#log-msg").textContent = "讀取中…";
+  try { const j = await api("history", { patient: q, limit: 50 }); logData = j.orders; logLoaded = true; $("#log-msg").textContent = `${logData.length} 張`; renderLog(); }
+  catch (e) { $("#log-msg").textContent = e.message; }
+}
+$("#log-q").addEventListener("input", () => { clearTimeout(logTimer); logTimer = setTimeout(loadLog, 400); });
+function renderLog() {
+  $("#log-list").innerHTML = logData.map(h => {
+    const open = logOpen === h.id, voided = h.status === "作廢";
+    const daily = h.daily ?? null;
+    const grp = cat => h.lines.filter(l => (byName[l.name] || {}).cat === cat);
+    const other = h.lines.filter(l => !byName[l.name]);
+    const show = l => h.days ? r1(l.grams / h.days) : l.grams;
+    const block = (t, ls) => ls.length ? `<div class="lg-grp">${t}${h.days ? "（每日 g）" : "（總 g）"}</div><div class="lg-lines">${ls.map(l => `<span>${esc(l.name)} <b>${show(l)}</b></span>`).join("")}</div>` : "";
+    return `<li class="${voided ? "voided" : ""}"><button type="button" class="main" data-log="${esc(h.id)}" aria-expanded="${open}">
+      <span class="name">${esc(h.date)}<span class="py">${esc(h.patient)} · ${esc(h.id)}</span></span>
+      <span class="g">${daily != null ? daily + "<small>g/日</small>" : fmt(h.total) + "<small>g 總</small>"}</span>
+      <span class="meta">${voided ? '<span class="pill bad">已作廢</span>' : ""}${h.days ? h.days + " 天 · " : ""}${h.lines.length} 味 · 共 ${fmt(h.total)} g · ${esc(h.by)}</span><span></span></button>
+      ${open ? `<div class="lg-body">${block("方劑", grp("方劑"))}${block("單味", grp("單味"))}${block("其他", other)}
+        ${h.note ? `<div class="hint">${esc(h.note)}</div>` : ""}
+        <div class="lg-act"><button type="button" class="primary" data-reuse="${esc(h.id)}">照這張再配</button>
+        ${voided ? "" : (voidAsk === h.id
+          ? `<div class="void-ask">確定作廢？會把 ${fmt(h.total)} g 加回庫存，原始紀錄保留。<input id="void-why" class="num-in" placeholder="原因（選填）"><div class="row"><button type="button" class="danger" data-void-yes="${esc(h.id)}">確定作廢</button><button type="button" class="ghost sm" data-void-no>取消</button></div></div>`
+          : `<button type="button" class="ghost" data-void="${esc(h.id)}">作廢這張</button>`)}
+        </div></div>` : ""}</li>`;
+  }).join("") || `<div class="empty">找不到配藥紀錄。</div>`;
+}
+$("#log-list").addEventListener("click", async e => {
+  const t = e.target;
+  const m = t.closest("[data-log]"); if (m) { logOpen = logOpen === m.dataset.log ? null : m.dataset.log; voidAsk = null; renderLog(); return; }
+  const ru = t.closest("[data-reuse]");
+  if (ru) {
+    const h = logData.find(x => x.id === ru.dataset.reuse);
+    const days = h.days || 1;
+    rx = h.lines.map(l => ({ raw: l.name, name: l.name, qty: r1(l.grams / days) }));
+    $("#rx-mode").value = "day"; $("#rx-days").value = h.days || 7; if (h.times) $("#rx-times").value = h.times; $("#rx-pt").value = h.patient;
+    writeText(); hideRxConfirm(); buildTable(); showTab("rx"); window.scrollTo(0, 0);
+    if (!h.days) { $("#rx-verdict").className = "verdict warn"; $("#rx-verdict").textContent = "這張是舊資料，沒有記天數，帶進來的數字是當時的「總克數」。請改成每日量再確認。"; }
+    return;
+  }
+  const v = t.closest("[data-void]"); if (v) { voidAsk = v.dataset.void; renderLog(); return; }
+  if (t.closest("[data-void-no]")) { voidAsk = null; renderLog(); return; }
+  const vy = t.closest("[data-void-yes]");
+  if (vy) { vy.disabled = true;
+    try { const j = await api("voidOrder", { id: vy.dataset.voidYes, reason: ($("#void-why") || {}).value || "", requestId: rid() });
+      $("#log-msg").textContent = `已作廢 ${j.id}，${j.returned} g 已加回庫存。`; voidAsk = null; await boot(); showTab("log"); await loadLog();
+    } catch (err) { $("#log-msg").textContent = err.message; vy.disabled = false; } }
+});
+
+/* ---------- 設定 ---------- */
+function setMsg(t, ok) { const m = $("#set-msg"); m.hidden = false; m.className = "verdict " + (ok ? "ok" : "bad"); m.textContent = t; }
+$("#adj-name").addEventListener("input", () => { const n = resolveName($("#adj-name").value); const s = byName[n]; $("#adj-now").textContent = s ? `系統目前：${fmt(s.left)} g` : ""; });
+$("#adj-go").addEventListener("click", async () => {
+  const name = resolveName($("#adj-name").value), g = parseFloat($("#adj-g").value);
+  if (!byName[name]) return setMsg("找不到這味藥。");
+  if (isNaN(g) || g < 0) return setMsg("實際克數要是 0 以上的數字。");
+  try { const j = await api("adjust", { name, actual: g, reason: $("#adj-why").value, requestId: rid() });
+    setMsg(`${j.name}：${j.before} g → ${j.after} g（差 ${j.diff} g），已記錄。`, true); $("#adj-g").value = ""; await boot(); showTab("set");
+  } catch (e) { setMsg(e.message); }
+});
+$("#al-go").addEventListener("click", async () => {
+  try { await api("addAlias", { from: $("#al-from").value, to: $("#al-to").value, requestId: rid() });
+    setMsg(`已新增別名：${$("#al-from").value} → ${$("#al-to").value}`, true); $("#al-from").value = ""; $("#al-to").value = ""; await boot(); showTab("set");
+  } catch (e) { setMsg(e.message); }
+});
+$("#ni-go").addEventListener("click", async () => {
+  try { const j = await api("addItem", { name: $("#ni-name").value, py: $("#ni-py").value, cat: $("#ni-cat").value, size: $("#ni-size").value,
+      exp: $("#ni-exp").value, grams: $("#ni-g").value, requestId: rid() });
+    setMsg(`已新增品項：${j.name}`, true); $("#ni-name").value = ""; $("#ni-py").value = ""; await boot(); showTab("set");
+  } catch (e) { setMsg(e.message); }
+});
+
+/* ---------- 啟動 ---------- */
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
+if (S.token) boot(); else showLogin();
+
+</script>
+</body>
+</html>
